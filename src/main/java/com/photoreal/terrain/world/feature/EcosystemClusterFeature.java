@@ -85,7 +85,7 @@ public class EcosystemClusterFeature extends Feature<EcosystemClusterConfig> {
         int placed = 0;
 
         // ── Шаг 1: Центральное дерево (массивный дуб/тёмный дуб) ─────────────
-        placed += placeFeatureAt(world, random, surfaceCenter, CANOPY_TREE_ID) ? 1 : 0;
+        placed += placeFeatureAt(world, random, surfaceCenter, CANOPY_TREE_ID, ctx) ? 1 : 0;
 
         // ── Шаг 2: Poisson Disk Sampling для деревьев среднего яруса ─────────
         List<BlockPos> treePositions = poissonDiskSample(
@@ -103,14 +103,14 @@ public class EcosystemClusterFeature extends Feature<EcosystemClusterConfig> {
 
             if (r < 4f) {
                 // Ближняя зона → средние деревья
-                placed += placeFeatureAt(world, random, surface, MEDIUM_TREE_ID) ? 1 : 0;
+                placed += placeFeatureAt(world, random, surface, MEDIUM_TREE_ID, ctx) ? 1 : 0;
             } else if (r < 9f) {
                 // Средняя зона → малые деревья или кусты
                 Identifier id = random.nextFloat() < 0.6f ? MEDIUM_TREE_ID : BUSH_ID;
-                placed += placeFeatureAt(world, random, surface, id) ? 1 : 0;
+                placed += placeFeatureAt(world, random, surface, id, ctx) ? 1 : 0;
             } else {
                 // Внешняя зона → только кусты и подлесок
-                placed += placeFeatureAt(world, random, surface, BUSH_ID) ? 1 : 0;
+                placed += placeFeatureAt(world, random, surface, BUSH_ID, ctx) ? 1 : 0;
             }
         }
 
@@ -122,7 +122,7 @@ public class EcosystemClusterFeature extends Feature<EcosystemClusterConfig> {
             int dz = (int)(Math.sin(angle) * dist);
             BlockPos pos = getSurface(world, origin.add(dx, 0, dz));
             if (pos != null) {
-                placeFeatureAt(world, random, pos, UNDERGROWTH_ID);
+                placeFeatureAt(world, random, pos, UNDERGROWTH_ID, ctx);
             }
         }
 
@@ -242,14 +242,14 @@ public class EcosystemClusterFeature extends Feature<EcosystemClusterConfig> {
      * Использует мировой RegistryEntry lookup (нет аллокаций RegistryKey).
      */
     private boolean placeFeatureAt(StructureWorldAccess world, Random random,
-                                    BlockPos pos, Identifier featureId) {
+                                    BlockPos pos, Identifier featureId, FeatureContext<EcosystemClusterConfig> ctx) {
         var lookup = world.getRegistryManager().getOptional(RegistryKeys.PLACED_FEATURE);
         if (lookup.isEmpty()) return false;
 
-        var entry = lookup.get().getOptional(RegistryKey.of(RegistryKeys.PLACED_FEATURE, featureId));
+        var entry = lookup.get().getEntry(RegistryKey.of(RegistryKeys.PLACED_FEATURE, featureId));
         if (entry.isEmpty()) return false;
 
-        return entry.get().generateUnregistered(world, null, random, pos);
+        return entry.get().value().generateUnregistered(world, ctx.getGenerator(), random, pos);
     }
 
     /** Размещает моховый булыжник (2-3 блока) на случайной позиции. */

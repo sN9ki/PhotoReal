@@ -57,15 +57,15 @@ public final class SmoothVertexDisplacer {
     // Шаг конечных разностей для градиента (в блоках)
     private static final float H = 0.5f;
 
-    // Максимальное смещение вершины (не даём выйти за пределы смежных блоков)
-    public static final float MAX_SHIFT = 0.45f;
+    // Максимальное смещение вершины — 10% блока, гарантирует отсутствие разрывов
+    public static final float MAX_SHIFT = 0.10f;
 
     // Минимальная длина градиента (защита от деления на ноль)
     private static final float MIN_GRADIENT_SQ = 0.001f;
 
-    // Порог плотности для применения смещения (только у поверхности)
-    // Вершины глубоко в камне или глубоко в воздухе — не смещаем
-    private static final float DENSITY_THRESHOLD = 1.2f;
+    // Порог плотности: смещаем только вершины вблизи изоповерхности (|D| < 0.8)
+    // Глубокие блоки и чистый воздух — не трогаем
+    private static final float DENSITY_THRESHOLD = 0.8f;
 
     /** Результат обработки вершины (избегаем аллокаций — используем reuse-объект). */
     public static final class VertexResult {

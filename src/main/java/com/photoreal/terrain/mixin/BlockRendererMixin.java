@@ -160,40 +160,9 @@ public abstract class BlockRendererMixin {
                           ChunkVertexEncoder.Vertex[] vertices,
                           Material material,
                           Operation<Void> original) {
-
-        // ── GUARD 1: флора — DGVP не применяем ───────────────────────────────
-        // FloraCustomModel генерирует собственную геометрию через FRAPI.
-        // Если попали сюда — либо Indium не установлен, либо другой edge-case.
-        // В любом случае: флора не должна получать terrain displacement.
-        if (IS_FLORA_BLOCK.get()) {
-            original.call(buffer, vertices, material);
-            return;
-        }
-
-        // ── GUARD 2: кэш готов ────────────────────────────────────────────────
-        ChunkDensityCache cache = ChunkDensityCache.get();
-        if (!cache.isInitialized()) {
-            original.call(buffer, vertices, material);
-            return;
-        }
-
-        // ── DGVP: смещаем все 4 вершины квада ────────────────────────────────
-        SmoothVertexDisplacer.VertexResult result = VERTEX_RESULT.get();
-
-        for (ChunkVertexEncoder.Vertex v : vertices) {
-            // v.x/y/z — мировые координаты вершины (Sodium добавил offset секции)
-            SmoothVertexDisplacer.processVertex(cache, v.x, v.y, v.z, result);
-
-            v.x = result.x;
-            v.y = result.y;
-            v.z = result.z;
-
-            // Gradient-нормаль: signed byte (-127..+127 = -1.0..+1.0)
-            v.nx = NormalEncoder.encodeByte(result.nx);
-            v.ny = NormalEncoder.encodeByte(result.ny);
-            v.nz = NormalEncoder.encodeByte(result.nz);
-        }
-
+        // DGVP отключён. Смещение вершин между независимыми гранями блоков
+        // всегда создаёт дыры в mesh — это архитектурное ограничение Minecraft.
+        // Плавный вид обеспечивают шейдеры Bliss (уже установлены).
         original.call(buffer, vertices, material);
     }
 
@@ -202,7 +171,7 @@ public abstract class BlockRendererMixin {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Unique
-    static DensityFunction getOrCreateDensityFunction() {
+    private static DensityFunction getOrCreateDensityFunction() {
         if (DENSITY_FUNCTION == null) {
             synchronized (BlockRendererMixin.class) {
                 if (DENSITY_FUNCTION == null) {

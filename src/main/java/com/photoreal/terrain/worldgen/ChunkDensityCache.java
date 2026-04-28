@@ -66,8 +66,8 @@ public class ChunkDensityCache {
         this.baseZ = sectionZ - PADDING;
         this.initialized = true;
 
-        // Используем SinglePointContext для минимального оверхеда
-        DensityFunction.SinglePointContext ctx = new DensityFunction.SinglePointContext(0, 0, 0);
+        // Используем UnblendedNoisePos для минимального оверхеда
+        DensityFunction.UnblendedNoisePos ctx = new DensityFunction.UnblendedNoisePos(0, 0, 0);
 
         for (int lx = 0; lx < GRID_SIZE; lx++) {
             for (int ly = 0; ly < GRID_SIZE; ly++) {
@@ -77,7 +77,7 @@ public class ChunkDensityCache {
                     int wz = baseZ + lz;
 
                     // Создаём NoisePos для sampling функции плотности
-                    double d = function.sample(new DensityFunction.SinglePointContext(wx, wy, wz));
+                    double d = function.sample(new DensityFunction.UnblendedNoisePos(wx, wy, wz));
                     densities[index(lx, ly, lz)] = (float) d;
                 }
             }

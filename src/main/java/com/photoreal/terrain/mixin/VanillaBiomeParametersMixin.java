@@ -74,31 +74,13 @@ public abstract class VanillaBiomeParametersMixin {
         at = @At("RETURN")
     )
     private void injectPhotorealBiome(
-            Consumer<MultiNoiseUtil.Entries<RegistryEntry<Biome>>> parameters,
-            RegistryEntryLookup<Biome> biomeRegistry,
+            Consumer<com.mojang.datafixers.util.Pair<MultiNoiseUtil.NoiseHypercube, RegistryKey<Biome>>> parameters,
             CallbackInfo ci) {
 
-        // Получаем RegistryEntry нашего биома из реестра
-        var ourBiome = biomeRegistry.getOptional(PhotorealBiomes.PHOTOREAL_DENSE_FOREST);
-        if (ourBiome.isEmpty()) {
-            PhotorealTerrainMod.LOGGER.warn(
-                "[PhotorealTerrain] Биом '{}' не найден в реестре! " +
-                "Убедитесь что JSON файл биома существует в датапаке.",
-                PhotorealBiomes.PHOTOREAL_DENSE_FOREST.getValue()
-            );
-            return;
-        }
-
         // ── Параметры Multi-Noise для нашего биома ───────────────────────────
-        //
-        // Каждый параметр — ParameterRange [min, max] в пространстве [-2, 2]
-        // Minecraft нормализует vanilla-значения в [-1, 1]
-        //
-        // Мы используем несколько отдельных NoiseHypercube-точек чтобы
-        // покрыть разные комбинации conditions → биом возникает чаще.
-
+        
         // Точка 1: Основная — влажная умеренная долина
-        addBiome(parameters, ourBiome.get(),
+        addBiome(parameters, PhotorealBiomes.PHOTOREAL_DENSE_FOREST,
             range(0.20f,  0.55f),   // temperature: умеренный
             range(0.55f,  0.90f),   // humidity: высокая
             range(-0.10f, 0.55f),   // continentalness: умеренно материковый
@@ -108,7 +90,7 @@ public abstract class VanillaBiomeParametersMixin {
         );
 
         // Точка 2: Расширение — чуть менее влажная версия
-        addBiome(parameters, ourBiome.get(),
+        addBiome(parameters, PhotorealBiomes.PHOTOREAL_DENSE_FOREST,
             range(0.15f,  0.45f),
             range(0.45f,  0.75f),
             range(-0.05f, 0.45f),
@@ -124,8 +106,8 @@ public abstract class VanillaBiomeParametersMixin {
 
     /** Удобный метод добавления биома с параметром-диапазонами. */
     private static void addBiome(
-            Consumer<MultiNoiseUtil.Entries<RegistryEntry<Biome>>> parameters,
-            RegistryEntry<Biome> biome,
+            Consumer<com.mojang.datafixers.util.Pair<MultiNoiseUtil.NoiseHypercube, RegistryKey<Biome>>> parameters,
+            RegistryKey<Biome> biome,
             ParameterRange temperature,
             ParameterRange humidity,
             ParameterRange continentalness,
@@ -133,8 +115,7 @@ public abstract class VanillaBiomeParametersMixin {
             ParameterRange weirdness,
             ParameterRange depth) {
 
-        parameters.accept(entries -> entries.add(
-            biome,
+        parameters.accept(com.mojang.datafixers.util.Pair.of(
             new NoiseHypercube(
                 temperature,
                 humidity,
@@ -143,7 +124,8 @@ public abstract class VanillaBiomeParametersMixin {
                 depth,
                 weirdness,
                 0L  // offset (0 = стандартный центр)
-            )
+            ),
+            biome
         ));
     }
 

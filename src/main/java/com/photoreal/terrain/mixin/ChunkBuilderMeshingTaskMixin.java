@@ -6,6 +6,7 @@ import com.photoreal.terrain.worldgen.SmoothDensityFunction;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildContext;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.tasks.ChunkBuilderMeshingTask;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
+import me.jellysquid.mods.sodium.client.util.task.CancellationToken;
 import net.minecraft.world.gen.densityfunction.DensityFunction;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -64,12 +65,12 @@ public abstract class ChunkBuilderMeshingTaskMixin {
         method = "execute",
         at = @At("HEAD")
     )
-    private void onExecuteHead(ChunkBuildContext ctx, CallbackInfoReturnable<?> ci) {
+    private void onExecuteHead(ChunkBuildContext ctx, CancellationToken cancellationToken, CallbackInfoReturnable<?> ci) {
         // Извлекаем начальные координаты секции из RenderSection
-        // render.getOrigin() возвращает BlockPos начала 16×16×16 секции
-        int originX = render.getOrigin().getX();
-        int originY = render.getOrigin().getY();
-        int originZ = render.getOrigin().getZ();
+        // render.getOriginX() возвращает BlockPos начала 16×16×16 секции
+        int originX = render.getOriginX();
+        int originY = render.getOriginY();
+        int originZ = render.getOriginZ();
 
         ChunkDensityCache cache = ChunkDensityCache.get();
 
@@ -101,7 +102,7 @@ public abstract class ChunkBuilderMeshingTaskMixin {
         method = "execute",
         at = @At("RETURN")
     )
-    private void onExecuteReturn(ChunkBuildContext ctx, CallbackInfoReturnable<?> ci) {
+    private void onExecuteReturn(ChunkBuildContext ctx, CancellationToken cancellationToken, CallbackInfoReturnable<?> ci) {
         // Не инвалидируем здесь — кэш может быть переиспользован следующей
         // секцией того же чанка (Y+1), что сэкономит повторное заполнение.
         // Инвалидация происходит в onExecuteHead при несовпадении секции.

@@ -131,17 +131,20 @@ public final class ProceduralCylinder {
             float nLen = (float) Math.sqrt(nx*nx + nz*nz);
             nx /= nLen; nz /= nLen;
 
-            // UV: U вдоль i-th side, V [0=low, 1=high]
-            float u0 = sprite.getFrameU(i / (float) SIDES);
-            float u1 = sprite.getFrameU((i + 1) / (float) SIDES);
-            float vLow  = sprite.getFrameV(0f);
-            float vHigh = sprite.getFrameV(1f);
+            // UV: getFrameU/V принимают 0–16 (пиксельные координаты в 16×16-спрайте)
+            float u0 = sprite.getFrameU((float) i / SIDES * 16);
+            float u1 = sprite.getFrameU((float)(i + 1) / SIDES * 16);
+            float vLow  = sprite.getFrameV(0);
+            float vHigh = sprite.getFrameV(16);
 
-            // Emitting quad (4 вершины: нижний_левый, нижний_правый, верх_правый, верх_левый)
             emitter.pos(0, x0, y0,    z0).uv(0, u0, vLow ).normal(0, nx, 0f, nz);
             emitter.pos(1, x1, y1,    z1).uv(1, u1, vLow ).normal(1, nx, 0f, nz);
             emitter.pos(2, x1, y1top, z1).uv(2, u1, vHigh).normal(2, nx, 0f, nz);
             emitter.pos(3, x0, y0top, z0).uv(3, u0, vHigh).normal(3, nx, 0f, nz);
+            // Цвета вершин: -1 = 0xFFFFFFFF = белый (без затемнения)
+            emitter.color(0, -1); emitter.color(1, -1);
+            emitter.color(2, -1); emitter.color(3, -1);
+            emitter.nominalFace(Direction.NORTH);
             emitter.emit();
         }
     }
@@ -166,17 +169,19 @@ public final class ProceduralCylinder {
             float x2 = cx + COS[b] * RADIUS;        float z2 = cz + SIN[b] * RADIUS;
             float x3 = cx + COS[c] * RADIUS;        float z3 = cz + SIN[c] * RADIUS;
 
-            // UV круговая проекция (offset от центра + нормировка)
-            float u0 = sprite.getFrameU(0.5f);                    float v0 = sprite.getFrameV(0.5f);
-            float u1 = sprite.getFrameU((COS[a] + 1f) * 0.5f);   float v1 = sprite.getFrameV((SIN[a] + 1f) * 0.5f);
-            float u2 = sprite.getFrameU((COS[b] + 1f) * 0.5f);   float v2 = sprite.getFrameV((SIN[b] + 1f) * 0.5f);
-            float u3 = sprite.getFrameU((COS[c] + 1f) * 0.5f);   float v3 = sprite.getFrameV((SIN[c] + 1f) * 0.5f);
+            // UV круговая проекция, значения 0–16
+            float u0 = sprite.getFrameU(8);                              float v0 = sprite.getFrameV(8);
+            float u1 = sprite.getFrameU((COS[a] + 1f) * 8);             float v1 = sprite.getFrameV((SIN[a] + 1f) * 8);
+            float u2 = sprite.getFrameU((COS[b] + 1f) * 8);             float v2 = sprite.getFrameV((SIN[b] + 1f) * 8);
+            float u3 = sprite.getFrameU((COS[c] + 1f) * 8);             float v3 = sprite.getFrameV((SIN[c] + 1f) * 8);
 
-            // Нормаль крышки = [0, 1, 0] (вверх)
             emitter.pos(0, x0, topY, z0).uv(0, u0, v0).normal(0, 0f, 1f, 0f);
             emitter.pos(1, x1, topY, z1).uv(1, u1, v1).normal(1, 0f, 1f, 0f);
             emitter.pos(2, x2, topY, z2).uv(2, u2, v2).normal(2, 0f, 1f, 0f);
             emitter.pos(3, x3, topY, z3).uv(3, u3, v3).normal(3, 0f, 1f, 0f);
+            emitter.color(0, -1); emitter.color(1, -1);
+            emitter.color(2, -1); emitter.color(3, -1);
+            emitter.nominalFace(Direction.UP);
             emitter.emit();
         }
     }

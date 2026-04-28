@@ -134,23 +134,25 @@ public final class TerrainAlignedCross {
             x3=v3[0]; y3=v3[1]; z3=v3[2];
         }
 
-        // UV: стандартный маппинг текстуры (U=0..1 горизонтально, V=0..1 вертикально)
-        float u0 = sprite.getFrameU(0f), u1 = sprite.getFrameU(1f);
-        float vBot = sprite.getFrameV(1f), vTop = sprite.getFrameV(0f);
+        // UV: getFrameU/V принимают значения 0–16 (пиксели в 16×16 спрайте)
+        float u0  = sprite.getFrameU(0);  float u1  = sprite.getFrameU(16);
+        float vBot = sprite.getFrameV(16); float vTop = sprite.getFrameV(0);
 
-        // Нормаль — двустороннее освещение (cull_face = none)
-        // Для cross-mesh нормаль всегда горизонтально перпендикулярна квadu
         emitter.pos(0, x0, y0, z0).uv(0, u0, vBot);
         emitter.pos(1, x1, y1, z1).uv(1, u1, vBot);
         emitter.pos(2, x2, y2, z2).uv(2, u1, vTop);
         emitter.pos(3, x3, y3, z3).uv(3, u0, vTop);
 
+        // Цвета вершин: -1 = 0xFFFFFFFF = белый (показываем текстуру без затемнения)
         if (tint != -1) {
-            // Применяем цвет биома ко всем вершинам
             emitter.spriteColor(0, tint, tint, tint, tint);
+        } else {
+            emitter.color(0, -1); emitter.color(1, -1);
+            emitter.color(2, -1); emitter.color(3, -1);
         }
 
-        // cullFace = null (трава рендерится с обеих сторон)
+        // nominalFace = UP для корректного AO и освещения
+        emitter.nominalFace(Direction.UP);
         emitter.cullFace(null);
         emitter.emit();
     }
@@ -214,7 +216,13 @@ public final class TerrainAlignedCross {
             emitter.normal(0, nx, ny, nz); emitter.normal(1, nx, ny, nz);
             emitter.normal(2, nx, ny, nz); emitter.normal(3, nx, ny, nz);
 
-            if (tint != -1) emitter.spriteColor(0, tint, tint, tint, tint);
+            if (tint != -1) {
+                emitter.spriteColor(0, tint, tint, tint, tint);
+            } else {
+                emitter.color(0, -1); emitter.color(1, -1);
+                emitter.color(2, -1); emitter.color(3, -1);
+            }
+            emitter.nominalFace(Direction.UP);
             emitter.cullFace(null);
             emitter.emit();
         }

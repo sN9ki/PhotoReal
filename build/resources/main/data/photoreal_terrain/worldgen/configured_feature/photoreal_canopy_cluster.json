@@ -1,0 +1,10 @@
+{
+  "type": "photoreal_terrain:ecosystem_cluster",
+  "config": {
+    "radius": 14,
+    "min_tree_spacing": 2.5,
+    "boulder_chance": 0.35,
+    "fallen_log_chance": 0.25,
+    "undergrowth_attempts": 48
+  }
+}
