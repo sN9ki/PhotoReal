@@ -1,0 +1,90 @@
+{
+  "sea_level": 63,
+  "disable_mob_generation": false,
+  "aquifers_enabled": true,
+  "ore_veins_enabled": true,
+  "legacy_random_source": false,
+
+  "default_block": {
+    "Name": "minecraft:stone"
+  },
+  "default_fluid": {
+    "Name": "minecraft:water",
+    "Properties": { "level": "0" }
+  },
+
+  "noise": {
+    "min_y": -64,
+    "height": 384,
+    "size_horizontal": 1,
+    "size_vertical": 2
+  },
+
+  "noise_router": {
+    "barrier": 0,
+    "fluid_level_floodedness": 0,
+    "fluid_level_spread": 0,
+    "lava": 0,
+    "temperature": 0,
+    "vegetation": 0,
+    "continents": 0,
+    "erosion": 0,
+    "depth": 0,
+    "ridges": 0,
+
+    "initial_density_without_jaggedness": {
+      "type": "photoreal_terrain:smooth_density",
+      "seed": 0,
+      "terrain_scale": 80.0,
+      "horizontal_scale": 256.0,
+      "sea_level": 64,
+      "octaves": 6,
+      "cave_strength": 0.35
+    },
+
+    "final_density": {
+      "type": "minecraft:squeeze",
+      "argument": {
+        "type": "minecraft:add",
+        "argument1": {
+          "type": "photoreal_terrain:smooth_density",
+          "seed": 0,
+          "terrain_scale": 80.0,
+          "horizontal_scale": 256.0,
+          "sea_level": 64,
+          "octaves": 6,
+          "cave_strength": 0.35
+        },
+        "argument2": {
+          "type": "minecraft:blend_density",
+          "argument": 0
+        }
+      }
+    },
+
+    "vein_toggle": 0,
+    "vein_ridged": 0,
+    "vein_gap": 0
+  },
+
+  "spawn_target": [
+    {
+      "temperature": 0,
+      "humidity": 0,
+      "continentalness": {
+        "min": -1.0,
+        "max": 1.0
+      },
+      "erosion": {
+        "min": -1.0,
+        "max": 1.0
+      },
+      "weirdness": {
+        "min": -1.0,
+        "max": 1.0
+      },
+      "depth": 0,
+      "offset": 0
+    }
+  ]
+}
