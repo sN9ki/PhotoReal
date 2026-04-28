@@ -1,4 +1,22 @@
 {
-  "mappings": {},
-  "data": {}
+  "mappings": {
+    "com/photoreal/terrain/mixin/TerrainAOMixin": {
+      "getAmbientOcclusionLightLevel": "Lnet/minecraft/class_4970$class_4971;method_26210(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)F"
+    },
+    "com/photoreal/terrain/mixin/TerrainCullingMixin": {
+      "getCullingShape": "Lnet/minecraft/class_4970$class_4971;method_26201(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Lnet/minecraft/class_265;",
+      "isOpaqueFullCube": "Lnet/minecraft/class_4970$class_4971;method_26216(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Z"
+    }
+  },
+  "data": {
+    "named:intermediary": {
+      "com/photoreal/terrain/mixin/TerrainAOMixin": {
+        "getAmbientOcclusionLightLevel": "Lnet/minecraft/class_4970$class_4971;method_26210(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)F"
+      },
+      "com/photoreal/terrain/mixin/TerrainCullingMixin": {
+        "getCullingShape": "Lnet/minecraft/class_4970$class_4971;method_26201(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Lnet/minecraft/class_265;",
+        "isOpaqueFullCube": "Lnet/minecraft/class_4970$class_4971;method_26216(Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Z"
+      }
+    }
+  }
 }
