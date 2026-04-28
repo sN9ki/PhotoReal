@@ -37,6 +37,7 @@ public class PhotorealTerrainMod implements ModInitializer {
             SmoothDensityFunction.CODEC.codec()
         );
 
+        com.photoreal.terrain.world.feature.PhotorealFeatures.register();
         LOGGER.info("[PhotorealTerrain] SmoothDensityFunction зарегистрирована как '{}'", SMOOTH_DENSITY_ID);
     }
 }

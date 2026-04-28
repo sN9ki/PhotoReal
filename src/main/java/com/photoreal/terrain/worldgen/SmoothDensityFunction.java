@@ -5,7 +5,11 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.math.noise.SimplexNoiseSampler;
 import net.minecraft.util.math.random.CheckedRandom;
+import net.minecraft.util.dynamic.CodecHolder;
 import net.minecraft.world.gen.densityfunction.DensityFunction;
+import net.minecraft.world.gen.densityfunction.DensityFunction.*;
+import net.minecraft.world.gen.densityfunction.DensityFunctionTypes.*;
+import net.minecraft.world.gen.densityfunction.DensityFunctionVisitor;
 
 /**
  * ============================================================
