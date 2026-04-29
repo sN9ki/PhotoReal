@@ -49,20 +49,22 @@ public final class TerrainAlignedCross {
     private TerrainAlignedCross() {}
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  GRASS / FLOWER — terrain-aligned cross
+    //  LUSH PLANT GENERATOR (Grass / Flower)
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Emits a terrain-aligned cross mesh for grass or flowers.
+     * Emits a lush, dense "bush" model for grass and flowers instead of a vanilla cross.
+     * Uses 3 quads rotated at 0, 60, and 120 degrees with randomized scale and offset.
+     * Vertex normals are forced UP for soft, fluffy foliage lighting.
      *
      * @param emitter       Fabric FRAPI QuadEmitter
      * @param sprite        Grass / flower texture
-     * @param cache         Chunk density cache
+     * @param cache         Chunk density cache (unused in lush mode, kept for signature)
      * @param worldX        Integer world X of the block
      * @param worldY        Integer world Y (nominal block floor)
      * @param worldZ        Integer world Z of the block
      * @param tint          Biome tint (0xRRGGBB) or -1 for none
-     * @param tiltToNormal  If true, tilt the stem to follow the surface normal
+     * @param tiltToNormal  Unused in lush mode (we sink it into the ground instead)
      */
     public static void emit(QuadEmitter emitter,
                             Sprite sprite,
@@ -71,89 +73,72 @@ public final class TerrainAlignedCross {
                             int tint,
                             boolean tiltToNormal) {
 
-        // ── Y of the terrain surface under each bottom vertex ─────────────────
-        float[] bottomY = new float[4];
-        for (int i = 0; i < 4; i++) {
-            float wx = worldX + BOTTOM_XZ[i][0];
-            float wz = worldZ + BOTTOM_XZ[i][1];
-            float sy = TerrainSurfaceSampler.findSurfaceY(cache, wx, worldY, wz);
-            bottomY[i] = sy - worldY;
-        }
+        long seed = new net.minecraft.util.math.BlockPos((int)worldX, (int)worldY, (int)worldZ).asLong();
+        long rng = lcg(seed ^ 0x3141592653589793L);
 
-        // ── Optional surface-normal tilt ─────────────────────────────────────
-        float[] rot = null;
-        if (tiltToNormal) {
-            float[] norm = TerrainSurfaceSampler.surfaceNormal(
-                cache, worldX + 0.5f, worldY, worldZ + 0.5f);
-            if (norm[1] < (1f - TILT_THRESHOLD)) {
-                rot = TerrainSurfaceSampler.alignmentRotation(norm);
-            }
-        }
+        // Scale: 0.75 to 1.3
+        rng = lcg(rng);
+        float scale = 0.75f + ((rng & 0xFFFF) / 65535f) * 0.55f; 
 
-        // ── Quad A: along X axis (constant Z = 0.5) ───────────────────────────
-        emitCrossQuad(emitter, sprite, tint, rot,
-            0.1f, bottomY[0],                  0.5f,  // v0 bottom-left
-            0.9f, bottomY[1],                  0.5f,  // v1 bottom-right
-            0.9f, bottomY[1] + GRASS_HEIGHT,   0.5f,  // v2 top-right
-            0.1f, bottomY[0] + GRASS_HEIGHT,   0.5f); // v3 top-left
+        // Offset X/Z: +/- 0.3
+        rng = lcg(rng);
+        float offsetX = (((rng >> 16) & 0xFF) / 127.5f - 1f) * 0.3f;
+        rng = lcg(rng);
+        float offsetZ = (((rng >> 16) & 0xFF) / 127.5f - 1f) * 0.3f;
+        
+        // Offset Y: -0.1 to -0.25 (sinks into the ground to prevent floating)
+        rng = lcg(rng);
+        float offsetY = -0.10f - ((rng & 0xFFFF) / 65535f) * 0.15f;
 
-        // ── Quad B: along Z axis (constant X = 0.5) ───────────────────────────
-        emitCrossQuad(emitter, sprite, tint, rot,
-            0.5f, bottomY[2],                  0.1f,
-            0.5f, bottomY[3],                  0.9f,
-            0.5f, bottomY[3] + GRASS_HEIGHT,   0.9f,
-            0.5f, bottomY[2] + GRASS_HEIGHT,   0.1f);
-    }
+        float width = scale;
+        float height = GRASS_HEIGHT * scale;
+        
+        float cx = 0.5f + offsetX;
+        float cy = offsetY;
+        float cz = 0.5f + offsetZ;
 
-    /**
-     * Emits one cross quad with optional surface-normal rotation applied.
-     *
-     * <p>Vertex layout (CCW from front):
-     * <pre>
-     *   v3 ─────── v2   ← top
-     *   │           │
-     *   v0 ─────── v1   ← bottom
-     * </pre>
-     */
-    private static void emitCrossQuad(QuadEmitter emitter, Sprite sprite, int tint,
-                                       float[] rot,
-                                       float x0, float y0, float z0,  // v0 bottom-left
-                                       float x1, float y1, float z1,  // v1 bottom-right
-                                       float x2, float y2, float z2,  // v2 top-right
-                                       float x3, float y3, float z3) {// v3 top-left
-
-        if (rot != null) {
-            float[] v0 = applyRotCentered(rot, x0, y0, z0);
-            float[] v1 = applyRotCentered(rot, x1, y1, z1);
-            float[] v2 = applyRotCentered(rot, x2, y2, z2);
-            float[] v3 = applyRotCentered(rot, x3, y3, z3);
-            x0=v0[0]; y0=v0[1]; z0=v0[2];
-            x1=v1[0]; y1=v1[1]; z1=v1[2];
-            x2=v2[0]; y2=v2[1]; z2=v2[2];
-            x3=v3[0]; y3=v3[1]; z3=v3[2];
-        }
-
-        // getFrameU/V accept pixel offsets in 0–16 space for the sprite
+        float halfW = width / 2.0f;
+        
         float uLeft = sprite.getFrameU(0f);
         float uRight = sprite.getFrameU(16f);
-        float vBot  = sprite.getFrameV(16f); // V=16 = bottom of texture
-        float vTop  = sprite.getFrameV(0f);  // V=0  = top of texture
+        float vBot = sprite.getFrameV(16f);
+        float vTop = sprite.getFrameV(0f);
 
-        emitter.pos(0, x0, y0, z0).uv(0, uLeft,  vBot);  // bottom-left
-        emitter.pos(1, x1, y1, z1).uv(1, uRight, vBot);  // bottom-right
-        emitter.pos(2, x2, y2, z2).uv(2, uRight, vTop);  // top-right
-        emitter.pos(3, x3, y3, z3).uv(3, uLeft,  vTop);  // top-left
+        // Generate 3 quads rotated at 0, 60, 120 degrees
+        for (int i = 0; i < 3; i++) {
+            float angle = (float) (i * Math.PI / 3.0);
+            float dx = (float) Math.cos(angle) * halfW;
+            float dz = (float) Math.sin(angle) * halfW;
 
-        if (tint != -1) {
-            emitter.spriteColor(0, tint, tint, tint, tint);
-        } else {
-            emitter.color(0, -1); emitter.color(1, -1);
-            emitter.color(2, -1); emitter.color(3, -1);
+            // v0: bottom-left
+            float x0 = cx - dx; float y0 = cy;          float z0 = cz - dz;
+            // v1: bottom-right
+            float x1 = cx + dx; float y1 = cy;          float z1 = cz + dz;
+            // v2: top-right
+            float x2 = cx + dx; float y2 = cy + height; float z2 = cz + dz;
+            // v3: top-left
+            float x3 = cx - dx; float y3 = cy + height; float z3 = cz - dz;
+
+            // FRONT FACE
+            emitter.pos(0, x0, y0, z0).uv(0, uLeft, vBot).normal(0, 0f, 1f, 0f);
+            emitter.pos(1, x1, y1, z1).uv(1, uRight, vBot).normal(1, 0f, 1f, 0f);
+            emitter.pos(2, x2, y2, z2).uv(2, uRight, vTop).normal(2, 0f, 1f, 0f);
+            emitter.pos(3, x3, y3, z3).uv(3, uLeft, vTop).normal(3, 0f, 1f, 0f);
+            applyTint(emitter, tint);
+            emitter.nominalFace(Direction.UP);
+            emitter.cullFace(null);
+            emitter.emit();
+
+            // BACK FACE (reversed winding, soft UP normal retained)
+            emitter.pos(0, x3, y3, z3).uv(0, uLeft, vTop).normal(0, 0f, 1f, 0f);
+            emitter.pos(1, x2, y2, z2).uv(1, uRight, vTop).normal(1, 0f, 1f, 0f);
+            emitter.pos(2, x1, y1, z1).uv(2, uRight, vBot).normal(2, 0f, 1f, 0f);
+            emitter.pos(3, x0, y0, z0).uv(3, uLeft, vBot).normal(3, 0f, 1f, 0f);
+            applyTint(emitter, tint);
+            emitter.nominalFace(Direction.UP);
+            emitter.cullFace(null);
+            emitter.emit();
         }
-
-        emitter.nominalFace(Direction.UP);
-        emitter.cullFace(null); // Never skip at chunk borders
-        emitter.emit();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

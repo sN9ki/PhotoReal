@@ -107,6 +107,11 @@ public abstract class BlockRendererMixin {
     private static final ThreadLocal<Boolean> IS_FLORA_BLOCK =
         ThreadLocal.withInitial(() -> false);
 
+    /** Сохраняем текущий контекст для доступа к мировым координатам из wrapPush. */
+    @Unique
+    private static final ThreadLocal<BlockRenderContext> CURRENT_CONTEXT =
+        new ThreadLocal<>();
+
     /** Синглтон DensityFunction (double-checked locking, volatile). */
     @Unique
     private static volatile DensityFunction DENSITY_FUNCTION = null;
@@ -117,6 +122,9 @@ public abstract class BlockRendererMixin {
 
     @Inject(method = "renderModel", at = @At("HEAD"))
     private void onRenderModelHead(BlockRenderContext ctx, ChunkBuildBuffers buffers, CallbackInfo ci) {
+        // Сохраняем контекст рендера блока для доступа из writeGeometry
+        CURRENT_CONTEXT.set(ctx);
+
         // Проверяем: является ли блок флорой с кастомным рендером
         BlockState state = ctx.state();
         boolean isFlora = FloraModelProvider.isFloraBlock(state.getBlock());
@@ -160,9 +168,32 @@ public abstract class BlockRendererMixin {
                           ChunkVertexEncoder.Vertex[] vertices,
                           Material material,
                           Operation<Void> original) {
-        // DGVP отключён. Смещение вершин между независимыми гранями блоков
-        // всегда создаёт дыры в mesh — это архитектурное ограничение Minecraft.
-        // Плавный вид обеспечивают шейдеры Bliss (уже установлены).
+
+        BlockRenderContext ctx = CURRENT_CONTEXT.get();
+
+        // Применяем NoCubes-интерполяцию только если контекст существует и это не флора
+        if (ctx != null && !IS_FLORA_BLOCK.get()) {
+            SmoothVertexDisplacer.VertexResult res = VERTEX_RESULT.get();
+            BlockPos pos = ctx.pos();
+
+            for (int i = 0; i < vertices.length; i++) {
+                ChunkVertexEncoder.Vertex v = vertices[i];
+
+                // processTopVertex сама проверит, является ли вершина верхней (wy ≈ blockY + 1.0)
+                SmoothVertexDisplacer.processTopVertex(
+                    ctx.world(),
+                    pos.getX(), pos.getY(), pos.getZ(),
+                    v.x, v.y, v.z,
+                    res
+                );
+
+                // Если вершина была смещена (Y изменился)
+                if (Math.abs(v.y - res.y) > 0.001f) {
+                    v.y = res.y;
+                }
+            }
+        }
+
         original.call(buffer, vertices, material);
     }
 
